@@ -1,0 +1,67 @@
+= Birddog
+Birddog was birthed from our experience with Bloodhound (github.com/foca/bloodhound)  Much of the code in Birddog is derived (lifted) from Bloodhound, but has been extended
+to include aggregates/regexes/testing and is Rails 3 compatible.
+
+Birddog and Bloodhound provide functionality to parse "natural language" into scopes for ActiveRecord.  They provide the avenue to enable "users" to choose the constraints 
+of a scope based on the type of the scope parameters.  (Kind of confusing, but super helpful for things like user defined rule based selection)
+
+= Using Birddog
+  Install it
+    gem install birddog       # => OR include it in your Gemfile
+
+== Example
+  Given the following model definitions
+
+    class User < ActiveRecord::Base
+      include Birddog
+
+      has_many :products
+
+      birddog do |search|
+        search.field :first_name
+        search.alias_field :name, :first_name
+        search.field :last_name
+        search.field :total_product_value, :type => :decimal, :aggregate => "SUM(products.value) AS total_product_value"
+        search.field :insensitive_last_name, :attribute => "last_name", :case_sensitive => false
+        search.field :substringed_last_name, :attribute => "last_name", :match_substring => true
+        search.field :available_product, :type => :boolean,
+                                         :attribute => "products.available",
+                                         :include => :products
+
+        search.keyword :aggregate_user do 
+          select(arel_table[:id]).
+            joins("LEFT OUTER JOIN products AS products ON (products.user_id = users.id)").
+            group(arel_table[:id])
+        end
+
+        search.text_search "first_name", "last_name", "products.name", :include => :products
+      end
+    end
+
+    class Product < ActiveRecord::Base
+      include Birddog
+
+      belongs_to :user
+
+      birddog do |search|
+        search.text_search "products.name", "products.value"
+
+        search.field :name, :regex => true, :wildcard => true
+        search.field :value, :type => :decimal
+        search.field :available, :type => :boolean
+
+        search.keyword :sort do |value|
+          { :order => "#{search.fields[value.to_sym][:attribute]} DESC" }
+        end
+      end
+    end
+
+    # The following will return all user ids with an aggregated "total_product_value" greater than 100
+    data_set = User.search("total_product_value:>100").search("aggregate_user")
+
+  You can now use birddog to query the models and run a single query chain to aggregate large datasets
+
+  There are many more aggregation and selection methods included, but this and the test suite should give you a good start.
+
+= License
+  Birddog (and subsequently Bloodhound) are licensed under MIT license (Read lib/birddog.rb for full license)
