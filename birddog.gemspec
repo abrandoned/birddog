@@ -8,8 +8,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Brandon Dewitt"]
   s.email       = ["brandonsdewitt@gmail.com"]
   s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.summary     = %q{Birddog (derived from Bloodhound) is for natural language scope creation and user determined rule selection}
+  s.description = %q{Seeeeeeeee Readme}
 
   s.rubyforge_project = "birddog"
 
