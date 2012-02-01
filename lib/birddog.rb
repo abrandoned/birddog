@@ -43,6 +43,7 @@ module Birddog
     def field(name, options={}, &mapping)
       @fields[name] = field = {
         :attribute       => options.fetch(:attribute, name),
+        :cast            => options.fetch(:cast, false),
         :type            => options.fetch(:type, :string),
         :case_sensitive  => options.fetch(:case_sensitive, true),
         :match_substring => options.fetch(:match_substring, false),
@@ -123,6 +124,16 @@ module Birddog
     end
     private :define_scope
 
+
+    def callable_or_cast(field, value)
+      if field[:cast] && cast_val.respond_to?(:call) 
+        field[:cast].call(value)
+      else
+        cast_value(value, field[:type])
+      end
+    end
+    private :callable_or_cast
+
     def cast_value(value, type)
       case type
       when :boolean then
@@ -140,7 +151,7 @@ module Birddog
     private :cast_value
 
     def setup_conditions(field, value)
-      value = cast_value(value, field[:type])
+      value = callable_or_cast(field, value) 
       value = field[:mapping].call(value)
 
       case field[:type]
