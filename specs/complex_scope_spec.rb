@@ -10,6 +10,14 @@ describe Birddog::Birddog do
     @bike = @john.products.create(:name => "Bike", :value => 100)
   end
 
+  describe "castable" do 
+    it "casts Date when a cast function is provided" do 
+      prods = Product.scopes_for_query("cast_val:10")
+
+      prods.must_include(@ducky)
+    end
+  end
+
   describe "aggregates" do 
     it "doesn't include HAVING clause when no condition included" do 
       sql = User.scopes_for_query("aggregate_user").scopes_for_query("total_product_value").to_sql

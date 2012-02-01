@@ -50,7 +50,7 @@ module Birddog
         :regex           => options.fetch(:regex, false),
         :wildcard        => options.fetch(:wildcard, false),
         :aggregate       => options.fetch(:aggregate, false),
-        :options         => options.except(:attribute, :type, :case_sensitive, :match_substring, :regex, :wildcard, :aggregate),
+        :options         => options.except(:attribute, :type, :case_sensitive, :match_substring, :regex, :wildcard, :aggregate, :cast),
         :mapping         => mapping || lambda{ |v| v }
       }
 
@@ -126,7 +126,7 @@ module Birddog
 
 
     def callable_or_cast(field, value)
-      if field[:cast] && cast_val.respond_to?(:call) 
+      if field[:cast] && field[:cast].respond_to?(:call) 
         field[:cast].call(value)
       else
         cast_value(value, field[:type])
@@ -150,7 +150,18 @@ module Birddog
     end
     private :cast_value
 
+    def parse_condition(value)
+      valid = %w(= == > < <= >= <>)
+      value.gsub!(/\s/, '')
+
+      parts = value.scan(/(?:[=<>]+)/)
+      cond = parts.first
+      valid.include?(cond) ? cond.strip : "="
+    end
+    private :parse_condition
+
     def setup_conditions(field, value)
+      condition = parse_condition(value)
       value = callable_or_cast(field, value) 
       value = field[:mapping].call(value)
 
@@ -158,9 +169,9 @@ module Birddog
       when :string then
         conditions_for_string_search(field, value)
       when :float, :decimal, :integer then
-        conditions_for_numeric(field, value)
+        conditions_for_numeric(field, condition, value)
       when :date, :datetime, :time then 
-        conditions_for_date(field, value)
+        conditions_for_date(field, condition, value)
       else
         { field[:attribute] => value }
       end

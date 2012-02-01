@@ -28,16 +28,16 @@ module Birddog
       [ "#{field_to_search} #{search_con} ", value_to_search ]
     end
 
-    def conditions_for_date(field, value)
-      [ "#{field[:attribute]} #{value.condition} ? ", value.value.strftime("%Y-%m-%d")]
+    def conditions_for_date(field, condition, value)
+      [ "#{field[:attribute]} #{condition} ? ", value.value.strftime("%Y-%m-%d")]
     end
 
-    def conditions_for_numeric(field, value)
-      case value.condition
+    def conditions_for_numeric(field, condition, value)
+      case condition
       when "=" then
         [ "ABS(#{field[:attribute]}) >= ? AND ABS(#{field[:attribute]}) < ?", value.to_f.abs.floor, (value.to_f.abs + 1).floor ]
       else
-        [ "#{field[:attribute]} #{value.condition} ? ", value.to_f ]
+        [ "#{field[:attribute]} #{condition} ? ", value.to_f ]
       end
     end
 
