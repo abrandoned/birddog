@@ -33,6 +33,8 @@ module Birddog
   class Birddog
     include ::Birddog::FieldConditions
 
+    AREL_KEYS = [:select, :limit, :joins, :includes, :group, :from, :where, :having]
+
     attr_reader :fields
 
     def initialize(model)
@@ -50,7 +52,7 @@ module Birddog
         :regex           => options.fetch(:regex, false),
         :wildcard        => options.fetch(:wildcard, false),
         :aggregate       => options.fetch(:aggregate, false),
-        :options         => options.except(:attribute, :type, :case_sensitive, :match_substring, :regex, :wildcard, :aggregate, :cast),
+        :options         => options.select { |k,v| AREL_KEYS.include?(k) }, 
         :mapping         => mapping || lambda{ |v| v }
       }
 

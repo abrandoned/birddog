@@ -44,7 +44,7 @@ class User < ActiveRecord::Base
     search.field :substringed_last_name, :attribute => "last_name", :match_substring => true
     search.field :available_product, :type => :boolean,
                                      :attribute => "products.available",
-                                     :include => :products
+                                     :joins => :products
 
     search.keyword :aggregate_user do 
       select(arel_table[:id]).
