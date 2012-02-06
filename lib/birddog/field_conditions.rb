@@ -2,8 +2,8 @@ module Birddog
 
   module FieldConditions
 
-    def conditions_for_string_search(field, value)
-      search_con = " LIKE ? "
+    def conditions_for_string_search(current_scope, field, value)
+      search_con = "=~"
       field_to_search = "lower(#{field[:attribute]})"
       value_to_search = value.downcase
 
@@ -18,27 +18,52 @@ module Birddog
 
       if field[:regex] && regexed?(value)
         # TODO check db driver to determine regex operator for DB (current is Postgres)
-        search_con = " ~ ? "
         value_to_search = value[1..value.size-2]
         field_to_search = field[:attribute]
       elsif field[:wildcard] && value_to_search.include?("*")
         value_to_search.gsub!(/[\*]/, "%")
       end
 
-      [ "#{field_to_search} #{search_con} ", value_to_search ]
+      conditionally_scoped(current_scope, field_to_search, search_con, value_to_search, field[:aggregate])
     end
 
-    def conditions_for_date(field, condition, value)
-      [ "#{field[:attribute]} #{condition} ? ", value.value.strftime("%Y-%m-%d")]
+    def conditions_for_date(current_scope, field, condition, value)
+      conditionally_scoped(current_scope, field[:attribute], condition, value.value.strftime("%Y-%m-%d"), field[:aggregate])
     end
 
-    def conditions_for_numeric(field, condition, value)
-      case condition
-      when "=" then
-        [ "ABS(#{field[:attribute]}) >= ? AND ABS(#{field[:attribute]}) < ?", value.to_f.abs.floor, (value.to_f.abs + 1).floor ]
+    def conditions_for_numeric(current_scope, field, condition, value, field_type)
+      conditionally_scoped(current_scope, field[:attribute], condition, cast_numeric(field_type, value), field[:aggregate])
+    end
+
+    def cast_numeric(field_type, value)
+      case field_type
+      when :integer then
+        value.to_i
       else
-        [ "#{field[:attribute]} #{condition} ? ", value.to_f ]
+        value.to_f
       end
+    end
+
+    def conditionally_scoped(current_scope, field, condition, value, aggregate)
+      scope = case condition
+      when "=~" then
+        current_scope.where( "#{field} LIKE ? ", value) unless aggregate
+      when :<, "<" then
+        current_scope.where{ __send__(field) < value } unless aggregate
+      when :>, ">" then
+        current_scope.where{ __send__(field) > value } unless aggregate
+      when :<=, "<=", "=<" then
+        current_scope.where{ __send__(field) <= value } unless aggregate
+      when :>=, ">=", "=>" then
+        current_scope.where{ __send__(field) >= value } unless aggregate
+      when "=" then
+        current_scope.where{ __send__(field) == value } unless aggregate
+      else
+        raise "#{condition} not defined for #{field}"
+      end
+
+      scope = current_scope.having("#{field} #{condition} ? ", value) if aggregate 
+      return scope
     end
 
     def regexed?(value)

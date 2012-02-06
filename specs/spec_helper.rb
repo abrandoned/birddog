@@ -52,7 +52,7 @@ class User < ActiveRecord::Base
         group(arel_table[:id])
     end
 
-    search.text_search "first_name", "last_name", "products.name", :include => :products
+    search.text_search "first_name", "last_name", "products.name", :joins => :products
   end
 end
 

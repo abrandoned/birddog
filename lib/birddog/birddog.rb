@@ -1,3 +1,5 @@
+require 'birddog/scope_builder'
+
 module Birddog
 
   def self.included(base)
@@ -47,17 +49,16 @@ module Birddog
     end
 
     def search(query)
-      tokens = tokenize(query)
-      tokens.inject(@model) do |model, (key,value)|
-        key, value = "text_search", key if value.nil?
-        scope_for(model, key, value)
-      end
+      key, value = tokenize(query)
+      key, value = "text_search", key if value.nil?
+      scope_for(@model, key, value)
     end
 
     def text_search(*fields)
       options = fields.extract_options!
       fields = fields.map { |f| "LOWER(#{f}) LIKE :value" }.join(" OR ")
 
+      # TODO add multi chained scope here with OR
       define_scope "text_search" do |value|
         options.merge(:conditions => [fields, { :value => "%#{value.downcase}%" }])
       end
@@ -74,18 +75,16 @@ module Birddog
       field[:options].merge!(:select => field[:aggregate])
 
       define_scope(name) do |value|
-        if conditional?(value)
-          field[:options].merge(:having => setup_conditions(field, value))
-        else
-          field[:options]
-        end
+        current_scope = ::Birddog::ScopeBuilder.build(@model, field[:options])
+        conditional?(value) ? setup_conditions(current_scope, field, value) : current_scope
       end
     end
     private :define_aggregate_field
 
     def define_field(name, field)
       define_scope(name) do |value|
-        field[:options].merge(:conditions => setup_conditions(field, value))
+        current_scope = ::Birddog::ScopeBuilder.build(@model, field[:options])
+        setup_conditions(current_scope, field, value)
       end
     end
     private :define_field
@@ -136,20 +135,20 @@ module Birddog
     end
     private :parse_condition
 
-    def setup_conditions(field, value)
+    def setup_conditions(current_scope, field, value)
       condition = parse_condition(value)
       value = callable_or_cast(field, value) 
       value = field[:mapping].call(value)
 
       case field[:type]
       when :string then
-        conditions_for_string_search(field, value)
+        conditions_for_string_search(current_scope, field, value)
       when :float, :decimal, :integer then
-        conditions_for_numeric(field, condition, value)
+        conditions_for_numeric(current_scope, field, condition, value, field[:type])
       when :date, :datetime, :time then 
-        conditions_for_date(field, condition, value)
+        conditions_for_date(current_scope, field, condition, value)
       else
-        { field[:attribute] => value }
+        current_scope.where{{ field[:attribute] => value }}
       end
     end
     private :setup_conditions
@@ -158,7 +157,7 @@ module Birddog
       split_tokens = query.split(":")
       split_tokens.each { |tok| tok.strip! }
 
-      [[split_tokens.shift, split_tokens.join(":")]]
+      [split_tokens.shift, split_tokens.join(":")]
     end
     private :tokenize
 
