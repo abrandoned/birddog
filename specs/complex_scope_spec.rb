@@ -13,7 +13,17 @@ describe Birddog::Birddog do
   describe "castable" do 
     it "casts Date when a cast function is provided" do 
       prods = Product.scopes_for_query("cast_val:10")
+      prods.must_include(@ducky)
+    end
 
+    it "casts Date when a cast function is provided and is <=" do 
+      prods = Product.scopes_for_query("cast_val:<=11")
+      prods.must_include(@ducky)
+    end
+
+    it "casts Date when a cast function is provided and is >" do 
+      prods = Product.scopes_for_query("cast_val:>9")
+      debugger
       prods.must_include(@ducky)
     end
   end

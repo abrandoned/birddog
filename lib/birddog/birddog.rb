@@ -101,9 +101,9 @@ module Birddog
     private :define_scope
 
 
-    def callable_or_cast(field, value)
+    def callable_or_cast(field, condition, value)
       if field[:cast] && field[:cast].respond_to?(:call) 
-        field[:cast].call(value)
+        field[:cast].call(value.gsub(condition, ""))
       else
         cast_value(value, field[:type])
       end
@@ -138,7 +138,7 @@ module Birddog
 
     def setup_conditions(field, value)
       condition = parse_condition(value)
-      value = callable_or_cast(field, value) 
+      value = callable_or_cast(field, condition, value) 
       value = field[:mapping].call(value)
 
       case field[:type]
