@@ -254,7 +254,7 @@ module Birddog
         aggregate_scope = "_birddog_average"
         field_alias = $1
         field_name = $2
-      when key =~ /^(sum_)([a-zA-Z_]*)/ && @sumable.include?($2.to_sym) then
+      when key =~ /^(sum_|total_)([a-zA-Z_]*)/ && @sumable.include?($2.to_sym) then
         aggregate_scope = "_birddog_sum"
         field_alias = $1
         field_name = $2

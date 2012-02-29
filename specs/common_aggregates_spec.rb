@@ -95,12 +95,22 @@ describe Birddog::Birddog do
 
     it "creates a query on the column desired when scope is sum_*" do 
       sql = Product.scopes_for_query("sum_value").to_sql
-      sql.must_match(/sum/)
+      sql.must_match(/sum_value/)
+    end
+
+    it "creates a query on the column desired when scope is total_*" do 
+      sql = Product.scopes_for_query("total_value").to_sql
+      sql.must_match(/total_value/)
     end
 
     it "calculates the sum and returns it in the result set" do 
       avg = Product.scopes_for_query("sum_value").first
       avg.sum_value.must_equal(310)
+    end
+
+    it "calculates the total and returns it in the result set" do 
+      avg = Product.scopes_for_query("total_value").first
+      avg.total_value.must_equal(310)
     end
   end
 end
