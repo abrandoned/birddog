@@ -204,8 +204,8 @@ module Birddog
     private :define_common_aggregates_for
 
     def _common_average_for(model)
-      define_static_scope(:_birddog_average) do |field, value|
-        field_name = "average_#{field}"
+      define_static_scope(:_birddog_average) do |field, field_alias, value|
+        field_name = "#{field_alias}#{field}"
         scope = { :select => @model.arel_table[field].average.as(field_name) }
         warn_common_aggregate_conditional if conditional?(value)
         scope
@@ -214,8 +214,8 @@ module Birddog
     private :_common_average_for
 
     def _common_sum_for(model)
-      define_static_scope(:_birddog_sum) do |field, value|
-        field_name = "sum_#{field}"
+      define_static_scope(:_birddog_sum) do |field, field_alias, value|
+        field_name = "#{field_alias}#{field}"
         scope = { :select => @model.arel_table[field].sum.as(field_name) }
         warn_common_aggregate_conditional if conditional?(value)
         scope
@@ -224,8 +224,8 @@ module Birddog
     private :_common_sum_for
       
     def _common_minimum_for(model)
-      define_static_scope(:_birddog_minimum) do |field, value|
-        field_name = "minimum_#{field}"
+      define_static_scope(:_birddog_minimum) do |field, field_alias, value|
+        field_name = "#{field_alias}#{field}"
         scope = { :select => @model.arel_table[field].minimum.as(field_name) }
         warn_common_aggregate_conditional if conditional?(value)
         scope
@@ -234,8 +234,8 @@ module Birddog
     private :_common_minimum_for
 
     def _common_maximum_for(model)
-      define_static_scope(:_birddog_maximum) do |field, value|
-        field_name = "maximum_#{field}"
+      define_static_scope(:_birddog_maximum) do |field, field_alias, value|
+        field_name = "#{field_alias}#{field}"
         scope = { :select => @model.arel_table[field].maximum.as(field_name) }
         warn_common_aggregate_conditional if conditional?(value)
         scope
@@ -246,33 +246,38 @@ module Birddog
     def aggregate_scope_for(model, key, value)
       aggregate_scope = nil
       field_name = nil
+      field_alias = nil
       key = key.to_s
 
       case 
-      when key =~ /^(average_)([a-zA-Z_]*)/ && @averagable.include?($2.to_sym) then
+      when key =~ /^(average_|avg_)([a-zA-Z_]*)/ && @averagable.include?($2.to_sym) then
         aggregate_scope = "_birddog_average"
+        field_alias = $1
         field_name = $2
       when key =~ /^(sum_)([a-zA-Z_]*)/ && @sumable.include?($2.to_sym) then
         aggregate_scope = "_birddog_sum"
+        field_alias = $1
         field_name = $2
-      when key =~ /^(minimum_)([a-zA-Z_]*)/ && @minimumable.include?($2.to_sym) then
+      when key =~ /^(minimum_|min_)([a-zA-Z_]*)/ && @minimumable.include?($2.to_sym) then
         aggregate_scope = "_birddog_minimum"
+        field_alias = $1
         field_name = $2
-      when key =~ /^(maximum_)([a-zA-Z_]*)/ && @maximumable.include?($2.to_sym) then
+      when key =~ /^(maximum_|max_)([a-zA-Z_]*)/ && @maximumable.include?($2.to_sym) then
         aggregate_scope = "_birddog_maximum"
+        field_alias = $1
         field_name = $2
       end
 
-      [aggregate_scope, field_name]
+      [field_name, field_alias, aggregate_scope]
     end
     private :aggregate_scope_for
  
     def scope_for(model, key, value)
-      scope_name, field = aggregate_scope_for(model, key, value)
+      field, field_alias, scope_name = aggregate_scope_for(model, key, value)
       scope_name = scope_name_for(key) unless scope_name
 
       if model.respond_to?(scope_name)
-        send_params = [field, value].compact
+        send_params = [field, field_alias, value].compact
         model.__send__(scope_name, *send_params)
       else
         model.scoped
