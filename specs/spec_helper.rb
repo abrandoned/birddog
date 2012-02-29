@@ -62,6 +62,10 @@ class Product < ActiveRecord::Base
   belongs_to :user
 
   birddog do |search|
+    search.averagable :value
+    search.minimumable :value
+    search.maximumable :value
+    search.sumable :value
     search.text_search "products.name", "products.value"
 
     search.field :name, :regex => true, :wildcard => true
