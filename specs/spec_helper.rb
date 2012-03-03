@@ -24,7 +24,7 @@ ActiveRecord::Schema.define(:version => 1) do
 
   create_table :products do |t|
     t.string :name
-    t.integer :value
+    t.decimal :value
     t.boolean :available, :default => true
     t.belongs_to :user
   end

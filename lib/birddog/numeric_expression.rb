@@ -4,7 +4,7 @@ module Birddog
 
     def initialize(value, type)
       value.gsub!(/\s/, '')
-      parts = value.scan(/(?:[=<>]+|(?:-?\d|\.)+)/)[0,2]
+      parts = value.scan(/(?:[=<>~]+|(?:-?\d|\.)+)/)[0,2]
 
       @value = Float(parts.last)
       @value = @value.to_i if type == :integer

@@ -160,10 +160,10 @@ module Birddog
     private :cast_value
 
     def parse_condition(value)
-      valid = %w(= == > < <= >= <>)
+      valid = %w(= == > < <= >= <> =~ ~=)
       value.gsub!(/\s/, '')
 
-      parts = value.scan(/(?:[=<>]+)/)
+      parts = value.scan(/(?:[=<>~]+)/)
       cond = parts.first
       valid.include?(cond) ? cond.strip : "="
     end

@@ -2,6 +2,12 @@ module Birddog
 
   module FieldConditions
 
+    FieldConversions = {
+      :integer => lambda{ |v| v.to_i },
+      :decimal => lambda{ |v| v.to_f },
+      :float => lambda{ |v| v.to_f }
+    }
+
     def conditions_for_string_search(field, value)
       search_con = " LIKE ? "
       field_to_search = "lower(#{field[:attribute]})"
@@ -33,11 +39,13 @@ module Birddog
     end
 
     def conditions_for_numeric(field, condition, value)
+      db_value = FieldConversions[field[:type]].call(value)
+
       case condition
-      when "=" then
-        [ "ABS(#{field[:attribute]}) >= ? AND ABS(#{field[:attribute]}) < ?", value.to_f.abs.floor, (value.to_f.abs + 1).floor ]
+      when "=~", "~=" then
+        [ "ABS(#{field[:attribute]}) >= ? AND ABS(#{field[:attribute]}) < ?", db_value.abs.floor, (db_value.abs + 1).floor ]
       else
-        [ "#{field[:attribute]} #{condition} ? ", value.to_f ]
+        [ "#{field[:attribute]} #{condition} ? ", db_value]
       end
     end
 
