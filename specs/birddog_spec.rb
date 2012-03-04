@@ -6,6 +6,7 @@ describe Birddog::Birddog do ####################
     Product.destroy_all
     @john = User.create(:first_name => "John", :last_name => "Doe")
     @ducky = @john.products.create(:name => "Rubber Duck", :value => 10)
+    @apple_duck = @john.products.create(:name => "Apple Duck", :value => 10.38)
     @tv = @john.products.create(:name => "TV", :value => 200)
   end
 
@@ -51,13 +52,26 @@ describe Birddog::Birddog do ####################
   end
 
   it "allows defining arbitrary keywords to create scopes" do
-    @john.products.scopes_for_query("sort:name").all.must_equal([@tv, @ducky])
+    @john.products.scopes_for_query("sort:name").all.must_equal([@tv, @ducky, @apple_duck])
   end
 
   describe "numeric fields" do ########################
     it "searches by equals" do
       @john.products.scopes_for_query("value:=10").must_include(@ducky)
+      @john.products.scopes_for_query("value:=10").wont_include(@apple_duck)
       @john.products.scopes_for_query("value:=10").size.must_equal(1)
+    end
+
+    it "includes range in ~= search" do 
+      @john.products.scopes_for_query("value:~=10").must_include(@ducky)
+      @john.products.scopes_for_query("value:~=10").must_include(@apple_duck)
+      @john.products.scopes_for_query("value:~=10").size.must_equal(2)
+    end
+
+    it "includes range in =~ search" do 
+      @john.products.scopes_for_query("value:=~10").must_include(@ducky)
+      @john.products.scopes_for_query("value:=~10").must_include(@apple_duck)
+      @john.products.scopes_for_query("value:=~10").size.must_equal(2)
     end
 
     it "searches by equality without =" do 
@@ -72,7 +86,8 @@ describe Birddog::Birddog do ####################
 
     it "searches by less than" do 
       @john.products.scopes_for_query("value:<100").must_include(@ducky)
-      @john.products.scopes_for_query("value:<100").size.must_equal(1)
+      @john.products.scopes_for_query("value:<100").must_include(@apple_duck)
+      @john.products.scopes_for_query("value:<100").size.must_equal(2)
     end
 
     it "searches by =>" do
@@ -83,7 +98,8 @@ describe Birddog::Birddog do ####################
     it "searches on negatives" do 
       @john.products.scopes_for_query("value:>=-200").must_include(@tv)
       @john.products.scopes_for_query("value:>=-200").must_include(@ducky)
-      @john.products.scopes_for_query("value:>=-200").size.must_equal(2)
+      @john.products.scopes_for_query("value:>=-200").must_include(@apple_duck)
+      @john.products.scopes_for_query("value:>=-200").size.must_equal(3)
     end
 
     describe "spacing" do ###########################
