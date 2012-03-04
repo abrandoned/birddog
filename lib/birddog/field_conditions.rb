@@ -4,11 +4,7 @@ module Birddog
 
     def conditions_for_string_search(current_scope, field, value)
       search_con = "=~"
-      value_to_search = value
-
-      if field[:case_sensitive]
-        value_to_search = value
-      end
+      value_to_search = value.dup
 
       if field[:match_substring]
         value_to_search = "%#{value_to_search}%"
@@ -29,7 +25,7 @@ module Birddog
     end
 
     def conditions_for_numeric(current_scope, field, condition, value, field_type)
-      conditionally_scoped(current_scope, field[:attribute], condition, cast_numeric(field_type, value), field[:aggregate])
+      conditionally_scoped(current_scope, field[:attribute], condition, cast_numeric(field_type, value), field[:aggregate], true)
     end
 
     def cast_numeric(field_type, value)
@@ -41,11 +37,15 @@ module Birddog
       end
     end
 
-    def conditionally_scoped(current_scope, field, condition, value, aggregate)
+    def conditionally_scoped(current_scope, field, condition, value, aggregate, is_numeric = false)
       having_or_where = (aggregate ? :having : :where)
       scope = case condition
       when "=~", "~=" then
-        current_scope.__send__(having_or_where, field.matches(value))
+        if is_numeric
+          current_scope.__send__(having_or_where, field.gteq(value.floor).and(field.lt((value + 1).floor))) 
+        else
+          current_scope.__send__(having_or_where, field.matches(value))
+        end
       when :<, "<" then
         current_scope.__send__(having_or_where, field.lt(value))
       when :>, ">" then
