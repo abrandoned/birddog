@@ -4,11 +4,9 @@ module Birddog
 
     def conditions_for_string_search(current_scope, field, value)
       search_con = "=~"
-      field_to_search = "lower(#{field[:attribute]})"
-      value_to_search = value.downcase
+      value_to_search = value
 
       if field[:case_sensitive]
-        field_to_search = field[:attribute]
         value_to_search = value
       end
 
@@ -19,12 +17,11 @@ module Birddog
       if field[:regex] && regexed?(value)
         # TODO check db driver to determine regex operator for DB (current is Postgres)
         value_to_search = value[1..value.size-2]
-        field_to_search = field[:attribute]
       elsif field[:wildcard] && value_to_search.include?("*")
         value_to_search.gsub!(/[\*]/, "%")
       end
 
-      conditionally_scoped(current_scope, field_to_search, search_con, value_to_search, field[:aggregate])
+      conditionally_scoped(current_scope, field[:attribute], search_con, value_to_search, field[:aggregate])
     end
 
     def conditions_for_date(current_scope, field, condition, value)
@@ -45,24 +42,24 @@ module Birddog
     end
 
     def conditionally_scoped(current_scope, field, condition, value, aggregate)
+      having_or_where = (aggregate ? :having : :where)
       scope = case condition
       when "=~" then
-        current_scope.where( "#{field} LIKE ? ", value) unless aggregate
+        current_scope.__send__(having_or_where, field.matches(value))
       when :<, "<" then
-        current_scope.where{ __send__(field) < value } unless aggregate
+        current_scope.__send__(having_or_where, field.lt(value))
       when :>, ">" then
-        current_scope.where{ __send__(field) > value } unless aggregate
+        current_scope.__send__(having_or_where, field.gt(value))
       when :<=, "<=", "=<" then
-        current_scope.where{ __send__(field) <= value } unless aggregate
+        current_scope.__send__(having_or_where, field.lteq(value))
       when :>=, ">=", "=>" then
-        current_scope.where{ __send__(field) >= value } unless aggregate
+        current_scope.__send__(having_or_where, field.gteq(value))
       when "=" then
-        current_scope.where{ __send__(field) == value } unless aggregate
+        current_scope.__send__(having_or_where, field.eq(value))
       else
         raise "#{condition} not defined for #{field}"
       end
 
-      scope = current_scope.having("#{field} #{condition} ? ", value) if aggregate 
       return scope
     end
 

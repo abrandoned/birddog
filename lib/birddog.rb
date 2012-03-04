@@ -17,11 +17,6 @@
 require 'chronic'
 require 'active_support/core_ext'
 require 'active_record'
-require 'squeel'
-
-Squeel.configure do |config|
-  config.load_core_extensions :hash  
-end
 
 require "birddog/version"
 require "birddog/field_conditions"

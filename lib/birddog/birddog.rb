@@ -20,7 +20,7 @@ module Birddog
 
     def field(name, options={}, &mapping)
       @fields[name] = field = {
-        :attribute       => options.fetch(:attribute, name),
+        :attribute       => field_attribute(name, options.fetch(:attribute, nil), options.fetch(:aggregate, nil)),
         :cast            => options.fetch(:cast, false),
         :type            => options.fetch(:type, :string),
         :case_sensitive  => options.fetch(:case_sensitive, true),
@@ -54,17 +54,20 @@ module Birddog
       scope_for(@model, key, value)
     end
 
-    def text_search(*fields)
-      options = fields.extract_options!
-      fields = fields.map { |f| "LOWER(#{f}) LIKE :value" }.join(" OR ")
-
-      # TODO add multi chained scope here with OR
-      define_scope "text_search" do |value|
-        options.merge(:conditions => [fields, { :value => "%#{value.downcase}%" }])
-      end
-    end
-
     ################## PRIVATES ####################
+
+    def aggregate_and_aliased?(aggregate)
+      aggregate && aggregate.respond_to?(:alias) && aggregate.alias
+    end
+    private :aggregate_and_aliased?
+
+    def field_attribute(name, val, aggregate)
+      val = name.to_sym unless val
+      val = ::Arel::Nodes::SqlLiteral.new(aggregate.alias) if aggregate_and_aliased?(aggregate)
+      val = @model.arel_table[val] if val.is_a?(Symbol)
+      return val
+    end
+    private :field_attribute
 
     def conditional?(value)
       value.index(/[<>=]/) != nil   
@@ -148,7 +151,7 @@ module Birddog
       when :date, :datetime, :time then 
         conditions_for_date(current_scope, field, condition, value)
       else
-        current_scope.where{{ field[:attribute] => value }}
+        current_scope.where(field[:attribute] => value)
       end
     end
     private :setup_conditions

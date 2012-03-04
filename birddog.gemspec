@@ -26,5 +26,4 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "chronic"
   s.add_runtime_dependency "activerecord"
   s.add_runtime_dependency "activesupport"
-  s.add_runtime_dependency "squeel"
 end
