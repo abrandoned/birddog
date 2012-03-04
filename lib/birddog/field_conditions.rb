@@ -44,7 +44,7 @@ module Birddog
     def conditionally_scoped(current_scope, field, condition, value, aggregate)
       having_or_where = (aggregate ? :having : :where)
       scope = case condition
-      when "=~" then
+      when "=~", "~=" then
         current_scope.__send__(having_or_where, field.matches(value))
       when :<, "<" then
         current_scope.__send__(having_or_where, field.lt(value))

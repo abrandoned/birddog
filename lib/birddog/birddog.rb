@@ -49,27 +49,36 @@ module Birddog
       aggregate?(name) ? define_aggregate_field(name, @fields[name]) : define_field(name, @fields[name])
     end
 
+    def aggregatable(*fields)
+      fields.flatten.compact.uniq.each do |agg_field|
+        averagable(agg_field)
+        minimumable(agg_field)
+        maximumable(agg_field)
+        sumable(agg_field)
+      end
+    end
+
     def averagable(*fields)
-      fields.flatten.each do |avg_field|
-        @averagable << avg_field
+      fields.flatten.compact.uniq.each do |avg_field|
+        @averagable << avg_field unless @averagable.include?(avg_field)
       end
     end
 
     def minimumable(*fields)
-      fields.flatten.each do |min_field|
-        @minimumable << min_field
+      fields.flatten.compact.uniq.each do |min_field|
+        @minimumable << min_field unless @minimumable.include?(min_field)
       end
     end
 
     def maximumable(*fields)
-      fields.flatten.each do |max_field|
-        @maximumable << max_field 
+      fields.flatten.compact.uniq.each do |max_field|
+        @maximumable << max_field unless @maximumable.include?(max_field)
       end
     end
 
     def sumable(*fields)
-      fields.flatten.each do |sum_field|
-        @sumable << sum_field
+      fields.flatten.compact.uniq.each do |sum_field|
+        @sumable << sum_field unless @sumable.include?(sum_field)
       end
     end
 
@@ -94,6 +103,7 @@ module Birddog
       val = name.to_sym unless val
       val = ::Arel::Nodes::SqlLiteral.new(aggregate.alias) if aggregate_and_aliased?(aggregate)
       val = @model.arel_table[val] if val.is_a?(Symbol)
+      val = ::Arel::Nodes::SqlLiteral.new(val) if val.is_a?(String)
       return val
     end
     private :field_attribute

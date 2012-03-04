@@ -36,6 +36,7 @@ class Product < ActiveRecord::Base
   belongs_to :user
 
   birddog do |search|
+    search.aggregatable :value
     search.field :name, :regex => true, :wildcard => true
     search.field :cast_val, :type => :decimal, :cast => lambda { |v| 10 }, :attribute => :value
     search.field :value, :type => :decimal
