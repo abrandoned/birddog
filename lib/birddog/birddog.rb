@@ -188,7 +188,7 @@ module Birddog
 
       case field[:type]
       when :string then
-        conditions_for_string_search(current_scope, field, value)
+        conditions_for_string_search(current_scope, field, condition, value)
       when :float, :decimal, :integer then
         conditions_for_numeric(current_scope, field, condition, value, field[:type])
       when :date, :datetime, :time then 

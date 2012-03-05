@@ -36,11 +36,6 @@ describe Birddog::Birddog do ####################
     User.scopes_for_query("last_name:Doe").size.must_equal(1)
   end
 
-  it "can find using case insensitive search" do
-    User.scopes_for_query("insensitive_last_name:doe").must_include(@john)
-    User.scopes_for_query("insensitive_last_name:doe").size.must_equal(1)
-  end
-
   it "can find matching substrings" do
     User.scopes_for_query("substringed_last_name:oe").must_include(@john)
     User.scopes_for_query("substringed_last_name:oe").size.must_equal(1)

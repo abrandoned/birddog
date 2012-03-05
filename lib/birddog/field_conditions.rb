@@ -2,19 +2,25 @@ module Birddog
 
   module FieldConditions
 
-    def conditions_for_string_search(current_scope, field, value)
-      search_con = "=~"
-      value_to_search = value.dup
+    def conditions_for_string_search(current_scope, field, condition, value)
+      search_con = condition
+      strict_equality = (search_con == "==")
+      value_to_search = (value ? value.dup : nil)
 
-      if field[:match_substring]
-        value_to_search = "%#{value_to_search}%"
-      end
+      if !strict_equality
+        if field[:match_substring]
+          search_con = "=~"
+          value_to_search = "%#{value_to_search}%"
+        end
 
-      if field[:regex] && regexed?(value)
-        # TODO check db driver to determine regex operator for DB (current is Postgres)
-        value_to_search = value[1..value.size-2]
-      elsif field[:wildcard] && value_to_search.include?("*")
-        value_to_search.gsub!(/[\*]/, "%")
+        if field[:regex] && regexed?(value)
+          # TODO check db driver to determine regex operator for DB (current is Postgres)
+          search_con = "=~"
+          value_to_search = value[1..value.size-2]
+        elsif field[:wildcard] && value_to_search.include?("*")
+          search_con = "=~"
+          value_to_search.gsub!(/[\*]/, "%")
+        end
       end
 
       conditionally_scoped(current_scope, field[:attribute], search_con, value_to_search, field[:aggregate])
@@ -54,7 +60,7 @@ module Birddog
         current_scope.__send__(having_or_where, field.lteq(value))
       when :>=, ">=", "=>" then
         current_scope.__send__(having_or_where, field.gteq(value))
-      when "=" then
+      when "=", "==" then
         current_scope.__send__(having_or_where, field.eq(value))
       else
         raise "#{condition} not defined for #{field}"
