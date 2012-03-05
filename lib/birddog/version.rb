@@ -1,3 +1,3 @@
 module Birddog
-  VERSION = "0.0.9.p1"
+  VERSION = "0.1.0"
 end
