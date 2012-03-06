@@ -10,6 +10,15 @@ describe Birddog::Birddog do ####################
     @tv = @john.products.create(:name => "TV", :value => 200)
   end
 
+  describe "ranges" do 
+    it "allows ranges on decimals" do 
+      results = Product.scopes_for_query("value:{10}..{300}")
+      results.must_include(@ducky)
+      results.must_include(@apple_duck)
+      results.must_include(@tv)
+    end
+  end
+
   it "finds a user by first_name" do
     User.scopes_for_query("first_name:John").must_include(@john)
   end

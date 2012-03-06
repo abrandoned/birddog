@@ -87,9 +87,13 @@ module Birddog
     end
 
     def search(query)
-      key, value = tokenize(query)
-      key, value = "text_search", key if value.nil?
-      scope_for(@model, key, value)
+      if query.include?("..") && query =~ /\s*([[:alnum:]_]+)\s*:\s*{([^[:space:]]+)}\.\.{([^[:space:]]+)}\s*$/ # query is a range object
+        begin_range = @model.scopes_for_query("#{$1}:>=#{$2}")
+        return begin_range.scopes_for_query("#{$1}:<=#{$3}")        
+      else
+        key, value = tokenize(query)
+        return scope_for(@model, key, value)
+      end
     end
 
     ################## PRIVATES ####################
@@ -190,7 +194,7 @@ module Birddog
       when :string then
         conditions_for_string_search(current_scope, field, condition, value)
       when :float, :decimal, :integer then
-        conditions_for_numeric(current_scope, field, condition, value, field[:type])
+        conditions_for_numeric(current_scope, field, condition, value)
       when :date, :datetime, :time then 
         conditions_for_date(current_scope, field, condition, value)
       else
