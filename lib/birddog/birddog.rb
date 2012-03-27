@@ -289,7 +289,7 @@ module Birddog
     private :aggregate_scope_for
  
     def scope_for(model, key, value)
-      field, field_alias, scope_name = aggregate_scope_for(model, key, value)
+      field, field_alias, scope_name = aggregate_scope_for(model, key, value) if value.nil? || value == ""
       scope_name = scope_name_for(key) unless scope_name
 
       if model.respond_to?(scope_name)
